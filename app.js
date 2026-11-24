@@ -1,9 +1,11 @@
-/* 成语记忆 — main UI */
+/* 成语记忆 — UI */
 (function () {
   const state = {
     view: "gallery",
     pendingDelete: null,
     groupRowMin: 2,
+    detailItem: null,
+    openBankId: null,
   };
 
   const els = {};
@@ -33,6 +35,16 @@
     els.singleExample = $("singleExample");
     els.singleMeaningHint = $("singleMeaningHint");
     els.singleId = $("singleId");
+    els.detailDialog = $("detailDialog");
+    els.detailTitle = $("detailTitle");
+    els.detailMeaning = $("detailMeaning");
+    els.detailExample = $("detailExample");
+    els.detailSimilar = $("detailSimilar");
+    els.detailSimilarList = $("detailSimilarList");
+    els.detailFooter = $("detailFooter");
+    els.detailEdit = $("detailEdit");
+    els.detailDelete = $("detailDelete");
+    els.detailClose = $("detailClose");
   }
 
   function showToast(msg) {
@@ -47,12 +59,13 @@
 
   function setView(view) {
     state.view = view;
-    document.querySelectorAll(".view-panel").forEach((p) => {
+    document.querySelectorAll(".page").forEach((p) => {
       p.classList.toggle("is-active", p.id === `view-${view}`);
     });
     document.querySelectorAll("[data-view]").forEach((btn) => {
       btn.classList.toggle("is-active", btn.getAttribute("data-view") === view);
     });
+    window.scrollTo({ top: 0, behavior: "auto" });
     if (view === "gallery") renderGallery();
     if (view === "manage") renderManageList();
     if (view === "groups") renderUserGroups();
@@ -89,83 +102,86 @@
     }
   }
 
-  function createFlipCard(item, options) {
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function truncate(s, n) {
+    const t = String(s || "");
+    return t.length > n ? `${t.slice(0, n)}…` : t;
+  }
+
+  function fillSimilarList(text, meaning) {
+    const sug = ChengyuSimilarMatcher.suggestForIdiom(text, meaning);
+    els.detailSimilarList.innerHTML = "";
+    if (!sug.items.length) {
+      els.detailSimilar.hidden = true;
+      return;
+    }
+    els.detailSimilar.hidden = false;
+    els.detailSimilar.querySelector(".modal__section-title").textContent =
+      sug.source === "bank"
+        ? "词库近义"
+        : sug.source === "local"
+          ? "释义匹配近义"
+          : "近义推荐";
+    sug.items.forEach((s) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${escapeHtml(s.text)}</strong><span>${escapeHtml(s.meaning)}</span>`;
+      els.detailSimilarList.appendChild(li);
+    });
+  }
+
+  function closeDetail() {
+    if (!els.detailDialog.open) return;
+    els.detailDialog.close();
+    document.body.classList.remove("modal-open");
+    state.detailItem = null;
+  }
+
+  function openDetail(item, options) {
+    const opts = options || {};
+    state.detailItem = item;
+    els.detailTitle.textContent = item.text || "";
+    els.detailMeaning.textContent = item.meaning || "（未填写释义）";
+    if (item.example) {
+      els.detailExample.hidden = false;
+      els.detailExample.textContent = `例：${item.example}`;
+    } else {
+      els.detailExample.hidden = true;
+    }
+    fillSimilarList(item.text, item.meaning);
+
+    const editable = opts.editable && item.id;
+    els.detailFooter.hidden = !editable;
+    if (editable) {
+      els.detailEdit.onclick = () => {
+        closeDetail();
+        loadSingleForm(item);
+        setView("manage");
+      };
+      els.detailDelete.onclick = () => {
+        closeDetail();
+        confirmDelete("idiom", item.id, item.text);
+      };
+    }
+
+    document.body.classList.add("modal-open");
+    els.detailDialog.showModal();
+  }
+
+  function createIdiomTile(item, options) {
     const opts = options || {};
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "flip-card";
-    btn.setAttribute("aria-label", `${item.text}，点击查看释义`);
-
-    const inner = document.createElement("div");
-    inner.className = "flip-card-inner";
-
-    const front = document.createElement("div");
-    front.className = "flip-face front";
-    front.innerHTML = `<p class="idiom-text">${escapeHtml(item.text)}</p><p class="reveal-hint">点击查看释义</p>`;
-
-    const back = document.createElement("div");
-    back.className = "flip-face back";
-    const meaning = item.meaning || "（未填写释义）";
-    const example = item.example ? `<p class="idiom-example">例：${escapeHtml(item.example)}</p>` : "";
-    back.innerHTML = `<p class="idiom-text">${escapeHtml(item.text)}</p><p class="idiom-meaning">${escapeHtml(meaning)}</p>${example}`;
-
-    if (opts.editable && item.id) {
-      const actions = document.createElement("div");
-      actions.className = "card-actions";
-      const editBtn = document.createElement("button");
-      editBtn.type = "button";
-      editBtn.className = "icon-button";
-      editBtn.textContent = "编辑";
-      editBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        loadSingleForm(item);
-        setView("manage");
-      });
-      const delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "icon-button";
-      delBtn.textContent = "删除";
-      delBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        confirmDelete("idiom", item.id, item.text);
-      });
-      actions.append(editBtn, delBtn);
-      back.appendChild(actions);
-    }
-
-    const similarBlock = renderInlineSimilar(item.text, item.meaning);
-    if (similarBlock) back.appendChild(similarBlock);
-
-    inner.append(front, back);
-    btn.appendChild(inner);
-
-    btn.addEventListener("click", () => {
-      const open = btn.classList.toggle("is-open");
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-
+    btn.className = "idiom-tile";
+    btn.innerHTML = `<p class="idiom-tile__text">${escapeHtml(item.text)}</p><p class="idiom-tile__hint">点击查看释义</p>`;
+    btn.addEventListener("click", () => openDetail(item, opts));
     return btn;
-  }
-
-  function renderInlineSimilar(text, meaning) {
-    const sug = ChengyuSimilarMatcher.suggestForIdiom(text, meaning);
-    if (!sug.items.length) return null;
-    const wrap = document.createElement("div");
-    wrap.className = "user-suggest";
-    const label = document.createElement("p");
-    label.textContent =
-      sug.source === "bank" ? "词库近义推荐：" : sug.source === "local" ? "根据释义本地匹配：" : "近义推荐：";
-    wrap.appendChild(label);
-    const row = document.createElement("div");
-    row.className = "bank-similar";
-    sug.items.forEach((s) => {
-      const mini = document.createElement("div");
-      mini.className = "mini-card";
-      mini.innerHTML = `<b>${escapeHtml(s.text)}</b>${escapeHtml(truncate(s.meaning, 40))}`;
-      row.appendChild(mini);
-    });
-    wrap.appendChild(row);
-    return wrap;
   }
 
   function renderGallery() {
@@ -184,7 +200,7 @@
     els.galleryGrid.hidden = !hasItems;
 
     items.forEach((item) => {
-      els.galleryGrid.appendChild(createFlipCard(item, { editable: true }));
+      els.galleryGrid.appendChild(createIdiomTile(item, { editable: true }));
     });
     updateCounts();
   }
@@ -193,64 +209,56 @@
     const groups = ChengyuStorage.listGroups();
     els.userGroupsGrid.innerHTML = "";
     els.groupsEmpty.hidden = groups.length > 0;
-    els.userGroupsGrid.hidden = groups.length === 0;
 
     groups.forEach((g) => {
-      const card = document.createElement("article");
-      card.className = "group-card";
-      const head = document.createElement("div");
-      head.style.display = "flex";
-      head.style.justifyContent = "space-between";
-      head.style.gap = "8px";
+      const block = document.createElement("article");
+      block.className = "group-block";
+
+      const headDiv = document.createElement("div");
+      headDiv.className = "group-block__head";
 
       const h3 = document.createElement("h3");
       h3.textContent = g.title;
-      head.appendChild(h3);
 
       const actions = document.createElement("div");
-      actions.className = "record-actions";
+      actions.className = "list__actions";
       const edit = document.createElement("button");
       edit.type = "button";
-      edit.className = "icon-button";
+      edit.className = "btn btn--ghost btn--sm";
       edit.textContent = "编辑";
       edit.addEventListener("click", () => loadGroupForm(g));
       const del = document.createElement("button");
       del.type = "button";
-      del.className = "icon-button";
+      del.className = "btn btn--ghost btn--sm";
       del.textContent = "删除";
       del.addEventListener("click", () => confirmDelete("group", g.id, g.title));
       actions.append(edit, del);
-      head.appendChild(actions);
-      card.appendChild(head);
+      headDiv.append(h3, actions);
+      block.appendChild(headDiv);
 
       if (g.note) {
         const note = document.createElement("p");
-        note.className = "muted";
+        note.className = "group-block__note";
         note.textContent = g.note;
-        card.appendChild(note);
+        block.appendChild(note);
       }
 
-      const members = document.createElement("div");
-      members.className = "members";
+      const chipRow = document.createElement("div");
+      chipRow.className = "chip-row";
       (g.members || []).forEach((m) => {
-        const chip = document.createElement("span");
-        chip.className = "chip";
-        chip.innerHTML = `${escapeHtml(m.text)}<small>${escapeHtml(truncate(m.meaning || "暂无释义", 28))}</small>`;
-        members.appendChild(chip);
-      });
-      card.appendChild(members);
-
-      const flipWrap = document.createElement("div");
-      flipWrap.className = "card-grid";
-      flipWrap.style.marginTop = "12px";
-      (g.members || []).forEach((m) => {
-        flipWrap.appendChild(
-          createFlipCard({ text: m.text, meaning: m.meaning, example: "" }, { editable: false })
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "member-chip";
+        chip.textContent = m.text;
+        chip.title = m.meaning || "";
+        chip.addEventListener("click", () =>
+          openDetail({ text: m.text, meaning: m.meaning, example: "" }, { editable: false })
         );
+        chipRow.appendChild(chip);
       });
-      card.appendChild(flipWrap);
+      block.appendChild(chipRow);
 
-      els.userGroupsGrid.appendChild(card);
+      els.userGroupsGrid.appendChild(block);
     });
   }
 
@@ -267,32 +275,54 @@
 
     els.bankList.innerHTML = "";
     rows.forEach((row) => {
-      const art = document.createElement("article");
-      art.className = "bank-item";
-      art.innerHTML = `<div class="bank-head"><strong>${escapeHtml(row.text)}</strong><span>${escapeHtml(row.meaning)}</span></div>`;
+      const id = `bank-${row.text}`;
+      const card = document.createElement("article");
+      card.className = "bank-card";
+      if (state.openBankId === id) card.classList.add("is-open");
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "bank-card__toggle";
+      toggle.innerHTML = `<span class="bank-card__word">${escapeHtml(row.text)}</span><span class="bank-card__summary">${escapeHtml(row.meaning)}</span><svg class="bank-card__chev" aria-hidden="true" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>`;
+      toggle.addEventListener("click", () => {
+        const willOpen = !card.classList.contains("is-open");
+        document.querySelectorAll(".bank-card.is-open").forEach((other) => {
+          other.classList.remove("is-open");
+        });
+        if (willOpen) {
+          card.classList.add("is-open");
+          state.openBankId = id;
+        } else {
+          state.openBankId = null;
+        }
+      });
+
+      const body = document.createElement("div");
+      body.className = "bank-card__body";
       if (row.example) {
         const ex = document.createElement("p");
-        ex.className = "muted";
+        ex.className = "bank-card__example";
         ex.textContent = `例：${row.example}`;
-        art.appendChild(ex);
+        body.appendChild(ex);
       }
-      const sim = document.createElement("div");
-      sim.className = "bank-similar";
+
+      const list = document.createElement("ul");
+      list.className = "tag-list";
       row.similar.forEach((s) => {
-        const m = document.createElement("div");
-        m.className = "mini-card";
-        m.innerHTML = `<b>${escapeHtml(s.text)}</b>${escapeHtml(truncate(s.meaning, 48))}`;
-        sim.appendChild(m);
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${escapeHtml(s.text)}</strong><span>${escapeHtml(truncate(s.meaning, 72))}</span>`;
+        list.appendChild(li);
       });
-      art.appendChild(sim);
+      body.appendChild(list);
 
       const act = document.createElement("div");
-      act.className = "bank-actions";
+      act.className = "bank-card__actions";
       const add = document.createElement("button");
       add.type = "button";
-      add.className = "ghost-button";
+      add.className = "btn btn--primary btn--sm";
       add.textContent = "加入我的成语";
-      add.addEventListener("click", () => {
+      add.addEventListener("click", (e) => {
+        e.stopPropagation();
         try {
           ChengyuStorage.saveIdiom({
             text: row.text,
@@ -301,14 +331,15 @@
           });
           showToast(`已加入：${row.text}`);
           updateCounts();
-        } catch (e) {
-          showToast(e.message || "保存失败");
+        } catch (err) {
+          showToast(err.message || "保存失败");
         }
       });
       act.appendChild(add);
-      art.appendChild(act);
+      body.appendChild(act);
 
-      els.bankList.appendChild(art);
+      card.append(toggle, body);
+      els.bankList.appendChild(card);
     });
     updateCounts();
   }
@@ -318,17 +349,21 @@
     els.manageIdiomList.innerHTML = "";
     items.forEach((it) => {
       const li = document.createElement("li");
-      li.innerHTML = `<div class="record-main"><strong>${escapeHtml(it.text)}</strong><span>${escapeHtml(truncate(it.meaning, 60))}</span></div>`;
+      li.className = "list__row";
+      const main = document.createElement("div");
+      main.className = "list__main";
+      main.innerHTML = `<strong>${escapeHtml(it.text)}</strong><span>${escapeHtml(truncate(it.meaning, 56))}</span>`;
+      li.appendChild(main);
       const actions = document.createElement("div");
-      actions.className = "record-actions";
+      actions.className = "list__actions";
       const edit = document.createElement("button");
       edit.type = "button";
-      edit.className = "icon-button";
+      edit.className = "btn btn--ghost btn--sm";
       edit.textContent = "编辑";
       edit.addEventListener("click", () => loadSingleForm(it));
       const del = document.createElement("button");
       del.type = "button";
-      del.className = "icon-button";
+      del.className = "btn btn--ghost btn--sm";
       del.textContent = "删除";
       del.addEventListener("click", () => confirmDelete("idiom", it.id, it.text));
       actions.append(edit, del);
@@ -346,7 +381,6 @@
     els.singleMeaning.dataset.autofill = "0";
     els.singleExample.value = item.example || "";
     els.singleMeaningHint.hidden = !!item.meaning;
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function resetSingleForm() {
@@ -362,7 +396,7 @@
     const single = mode === "single";
     $("formSingle").hidden = !single;
     $("formGroup").hidden = single;
-    document.querySelectorAll(".mode-pill").forEach((p) => {
+    document.querySelectorAll(".segmented__btn").forEach((p) => {
       const on = p.getAttribute("data-mode") === mode;
       p.classList.toggle("is-active", on);
       p.setAttribute("aria-selected", on ? "true" : "false");
@@ -382,7 +416,7 @@
     head.innerHTML = `<span>成语 ${index + 1}</span>`;
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "icon-button";
+    remove.className = "btn btn--ghost btn--sm";
     remove.textContent = "移除";
     remove.addEventListener("click", () => {
       if (els.groupRows.children.length <= state.groupRowMin) {
@@ -397,7 +431,7 @@
 
     const textLabel = document.createElement("label");
     textLabel.className = "field";
-    textLabel.innerHTML = "<span>成语</span>";
+    textLabel.innerHTML = '<span class="field__label">成语</span>';
     const textInput = document.createElement("input");
     textInput.type = "text";
     textInput.className = "group-text";
@@ -407,13 +441,13 @@
 
     const meaningLabel = document.createElement("label");
     meaningLabel.className = "field";
-    meaningLabel.innerHTML = "<span>释义</span>";
+    meaningLabel.innerHTML = '<span class="field__label">释义</span>';
     const meaningInput = document.createElement("textarea");
     meaningInput.rows = 2;
     meaningInput.className = "group-meaning";
     meaningLabel.appendChild(meaningInput);
     const hint = document.createElement("p");
-    hint.className = "field-hint group-hint";
+    hint.className = "field__hint group-hint";
     hint.hidden = true;
     hint.textContent = "词库未收录，请填写释义";
     meaningLabel.appendChild(hint);
@@ -473,20 +507,12 @@
     els.confirmDialog.showModal();
   }
 
-  function escapeHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function truncate(s, n) {
-    const t = String(s || "");
-    return t.length > n ? `${t.slice(0, n)}…` : t;
-  }
-
   function bindEvents() {
+    $("brandHome").addEventListener("click", (e) => {
+      e.preventDefault();
+      setView("gallery");
+    });
+
     document.querySelectorAll("[data-view]").forEach((btn) => {
       btn.addEventListener("click", () => setView(btn.getAttribute("data-view")));
     });
@@ -496,10 +522,9 @@
     });
 
     els.gallerySearch.addEventListener("input", renderGallery);
-
     els.bankSearch.addEventListener("input", renderBank);
 
-    document.querySelectorAll(".mode-pill").forEach((pill) => {
+    document.querySelectorAll(".segmented__btn").forEach((pill) => {
       pill.addEventListener("click", () => setFormMode(pill.getAttribute("data-mode")));
     });
 
@@ -556,12 +581,9 @@
         members.forEach((m) => {
           if (m.text.trim()) {
             try {
-              ChengyuStorage.saveIdiom({
-                text: m.text,
-                meaning: m.meaning,
-              });
+              ChengyuStorage.saveIdiom({ text: m.text, meaning: m.meaning });
             } catch {
-              /* ignore duplicate text issues */
+              /* ignore */
             }
           }
         });
@@ -592,6 +614,18 @@
       state.pendingDelete = null;
       els.confirmDialog.close();
     });
+
+    els.detailClose.addEventListener("click", closeDetail);
+    els.detailDialog.addEventListener("close", () => {
+      document.body.classList.remove("modal-open");
+    });
+    els.detailDialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      closeDetail();
+    });
+    els.detailDialog.addEventListener("click", (e) => {
+      if (e.target === els.detailDialog) closeDetail();
+    });
   }
 
   function boot() {
@@ -610,4 +644,6 @@
   } else {
     boot();
   }
+
+  window.__openDetailForDemo = openDetail;
 })();
