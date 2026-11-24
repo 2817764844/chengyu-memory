@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#F6F7F9" />
+    <meta name="apple-mobile-web-app-title" content="成语记忆" />
+    <meta
+      name="description"
+      content="成语记忆：记录成语、卡片复习、整理近义成语组，并从内置词库获取离线近义推荐。"
+    />
+    <title>成语记忆</title>
+    <link rel="stylesheet" href="./styles.css?v=20261124-3" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href="#" id="brandHome" aria-label="成语记忆首页">
+          <span class="brand__mark" aria-hidden="true">记</span>
+          <span class="brand__text">
+            <span class="brand__name">成语记忆</span>
+            <span class="brand__meta"
+              >词库 <span id="headerBankCount">0</span> · 我的
+              <span id="headerUserCount">0</span></span
+            >
+          </span>
+        </a>
+        <nav class="site-tabs" aria-label="主功能">
+          <button type="button" class="site-tab is-active" data-view="gallery">
+            卡片复习
+          </button>
+          <button type="button" class="site-tab" data-view="manage">添加</button>
+          <button type="button" class="site-tab" data-view="groups">
+            近义组
+          </button>
+          <button type="button" class="site-tab" data-view="bank">词库</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main">
+      <section
+        class="page is-active"
+        id="view-gallery"
+        aria-labelledby="galleryTitle"
+      >
+        <header class="page-head">
+          <h2 id="galleryTitle">我的成语</h2>
+          <p class="page-lead">点击卡片在弹窗中查看释义；数据保存在本机。</p>
+        </header>
+        <div class="page-toolbar">
+          <label class="search" for="gallerySearch">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input
+              id="gallerySearch"
+              type="search"
+              placeholder="搜索成语或释义"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+        <div class="tile-grid" id="galleryGrid"></div>
+        <div class="empty" id="galleryEmpty" hidden>
+          <p class="empty__title">还没有成语</p>
+          <p class="empty__text">去「添加」录入第一条，或从词库加入。</p>
+          <button type="button" class="btn btn--primary" data-jump="manage">
+            去添加
+          </button>
+        </div>
+      </section>
+
+      <section class="page" id="view-manage" aria-labelledby="manageTitle">
+        <header class="page-head">
+          <h2 id="manageTitle">添加成语</h2>
+        </header>
+        <span class="segmented" role="tablist" aria-label="添加模式">
+          <button
+            type="button"
+            class="segmented__btn is-active"
+            data-mode="single"
+            role="tab"
+            aria-selected="true"
+          >
+            单个成语
+          </button>
+          <button
+            type="button"
+            class="segmented__btn"
+            data-mode="group"
+            role="tab"
+            aria-selected="false"
+          >
+            近义成语组
+          </button>
+        </span>
+
+        <div id="formSingle" class="panel-stack">
+          <form class="panel" id="singleForm">
+            <input type="hidden" id="singleId" value="" />
+            <label class="field">
+              <span class="field__label">成语</span>
+              <input
+                type="text"
+                id="singleText"
+                required
+                maxlength="32"
+                placeholder="例如：一心一意"
+                autocomplete="off"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">释义</span>
+              <textarea
+                id="singleMeaning"
+                rows="3"
+                placeholder="输入成语后自动从词库填充，可修改"
+              ></textarea>
+              <p class="field__hint" id="singleMeaningHint" hidden>
+                词库未收录，请手动填写释义。
+              </p>
+            </label>
+            <label class="field">
+              <span class="field__label">例句（可选）</span>
+              <input
+                type="text"
+                id="singleExample"
+                maxlength="120"
+                placeholder="留空亦可"
+              />
+            </label>
+            <div class="btn-row">
+              <button type="submit" class="btn btn--primary">保存</button>
+              <button type="button" class="btn btn--ghost" id="singleReset">
+                清空
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div id="formGroup" class="panel-stack" hidden>
+          <form class="panel" id="groupForm">
+            <input type="hidden" id="groupId" value="" />
+            <label class="field">
+              <span class="field__label">组名（可选）</span>
+              <input
+                type="text"
+                id="groupTitle"
+                maxlength="48"
+                placeholder="不填则自动拼接"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">备注（可选）</span>
+              <input
+                type="text"
+                id="groupNote"
+                maxlength="80"
+                placeholder="例如：都表示专心致志"
+              />
+            </label>
+            <div id="groupRows" class="group-rows"></div>
+            <div class="btn-row">
+              <button type="button" class="btn btn--ghost" id="groupAddRow">
+                + 再加一条
+              </button>
+              <button type="submit" class="btn btn--primary">保存整组</button>
+              <button type="button" class="btn btn--ghost" id="groupReset">
+                清空
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <section class="panel panel--subtle">
+          <h3 class="panel__title">已保存</h3>
+          <ul class="list" id="manageIdiomList"></ul>
+        </section>
+      </section>
+
+      <section class="page" id="view-groups" aria-labelledby="groupsTitle">
+        <header class="page-head">
+          <h2 id="groupsTitle">我的近义组</h2>
+          <p class="page-lead">在「添加 → 近义成语组」录入 2 条以上成语。</p>
+        </header>
+        <div class="group-list" id="userGroupsGrid"></div>
+        <div class="empty" id="groupsEmpty" hidden>
+          <p class="empty__title">还没有近义组</p>
+          <button type="button" class="btn btn--primary" data-jump="manage">
+            去添加
+          </button>
+        </div>
+      </section>
+
+      <section class="page" id="view-bank" aria-labelledby="bankTitle">
+        <header class="page-head">
+          <h2 id="bankTitle">词库近义推荐</h2>
+          <p class="page-lead">
+            内置 <span id="bankCountInline">0</span>
+            条成语，每条离线预计算 2–4 个近义；点击条目展开。
+          </p>
+        </header>
+        <div class="page-toolbar">
+          <label class="search" for="bankSearch">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input
+              id="bankSearch"
+              type="search"
+              placeholder="筛选成语"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+        <div class="bank-stack" id="bankList"></div>
+      </section>
+    </main>
+
+    <nav class="dock" aria-label="底部导航">
+      <button type="button" class="dock__item is-active" data-view="gallery">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <rect x="4" y="6" width="16" height="12" rx="2.5" />
+        </svg>
+        <span>卡片</span>
+      </button>
+      <button type="button" class="dock__item" data-view="manage">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        <span>添加</span>
+      </button>
+      <button type="button" class="dock__item" data-view="groups">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="8" height="8" rx="2" />
+          <rect x="13" y="3" width="8" height="8" rx="2" />
+          <rect x="3" y="13" width="8" height="8" rx="2" />
+          <rect x="13" y="13" width="8" height="8" rx="2" />
+        </svg>
+        <span>近义组</span>
+      </button>
+      <button type="button" class="dock__item" data-view="bank">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M5 7h14M5 12h10M5 17h14" />
+        </svg>
+        <span>词库</span>
+      </button>
+    </nav>
+
+    <dialog class="modal" id="detailDialog" aria-labelledby="detailTitle">
+      <div class="modal__sheet">
+        <header class="modal__head">
+          <h2 id="detailTitle" class="modal__title"></h2>
+          <button
+            type="button"
+            class="modal__close"
+            id="detailClose"
+            aria-label="关闭"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </header>
+        <div class="modal__body">
+          <p id="detailMeaning" class="modal__meaning"></p>
+          <p id="detailExample" class="modal__example" hidden></p>
+          <section id="detailSimilar" class="modal__section" hidden>
+            <h3 class="modal__section-title">近义推荐</h3>
+            <ul id="detailSimilarList" class="tag-list"></ul>
+          </section>
+        </div>
+        <footer id="detailFooter" class="modal__foot" hidden>
+          <button type="button" class="btn btn--ghost" id="detailEdit">编辑</button>
+          <button type="button" class="btn btn--danger" id="detailDelete">删除</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <dialog class="modal modal--sm" id="confirmDialog">
+      <form method="dialog" class="modal__sheet">
+        <p id="confirmMessage" class="modal__meaning">确定删除？</p>
+        <div class="btn-row">
+          <button value="cancel" class="btn btn--ghost">取消</button>
+          <button value="ok" class="btn btn--danger" id="confirmOk">删除</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./chengyu-bank.js?v=20261124-1"></script>
+    <script src="./chengyu-similar.js?v=20261124-1"></script>
+    <script src="./chengyu-clusters-map.js?v=20261124-1"></script>
+    <script src="./dictionary.js?v=20261124-1"></script>
+    <script src="./similar-matcher.js?v=20261124-1"></script>
+    <script src="./storage.js?v=20261124-1"></script>
+    <script src="./app.js?v=20261124-3"></script>
+  </body>
+</html>
