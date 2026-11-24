@@ -1,3 +1,13 @@
 .DS_Store
 node_modules/
 *.log
+www/
+android/keystore.properties
+*.keystore
+*.jks
+*.apk
+*.pass.txt
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties

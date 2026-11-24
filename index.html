@@ -13,7 +13,7 @@
       content="成语记忆：记录成语、卡片复习、整理近义成语组，并从内置词库获取离线近义推荐。"
     />
     <title>成语记忆</title>
-    <link rel="stylesheet" href="./styles.css?v=20261124-3" />
+    <link rel="stylesheet" href="./styles.css?v=20261124-4" />
   </head>
   <body>
     <header class="site-header">
@@ -37,6 +37,7 @@
             近义组
           </button>
           <button type="button" class="site-tab" data-view="bank">词库</button>
+          <button type="button" class="site-tab" data-view="account">我的</button>
         </nav>
       </div>
     </header>
@@ -221,6 +222,56 @@
         </div>
         <div class="bank-stack" id="bankList"></div>
       </section>
+
+      <section class="page" id="view-account" aria-labelledby="accountTitle">
+        <header class="page-head">
+          <h2 id="accountTitle">我的</h2>
+          <p class="page-lead">账号与云同步（可选）。未登录时数据仅保存在本机。</p>
+        </header>
+
+        <p class="account-sync is-idle" id="accountSync" role="status">正在读取…</p>
+
+        <section class="panel account-update" aria-labelledby="appVersionHeading">
+          <div class="account-update-row">
+            <div>
+              <p class="account-update-label" id="appVersionHeading">应用版本</p>
+              <p class="account-version" id="appVersionLabel">网页版</p>
+            </div>
+            <button class="account-check-update btn btn--primary" id="checkUpdateButton" type="button">
+              检查更新
+            </button>
+          </div>
+          <p class="account-update-hint" id="appVersionHint">网页版请刷新页面获取最新内容。</p>
+          <p class="account-update-result" id="appUpdateResult" role="status" hidden></p>
+        </section>
+
+        <section class="panel" id="accountGuest">
+          <div class="account-tabs" role="tablist" aria-label="登录或注册">
+            <button type="button" data-account-mode="login" aria-pressed="true">登录</button>
+            <button type="button" data-account-mode="register" aria-pressed="false">注册</button>
+          </div>
+          <form id="accountForm">
+            <label class="field">
+              <span class="field__label">邮箱</span>
+              <input id="accountEmail" type="email" autocomplete="username" inputmode="email" placeholder="name@example.com" />
+            </label>
+            <label class="field">
+              <span class="field__label">密码</span>
+              <input id="accountPassword" type="password" autocomplete="current-password" placeholder="至少 6 位" />
+            </label>
+            <p class="field__hint" id="accountFormError" hidden></p>
+            <button class="btn btn--primary" id="accountSubmit" type="submit">登录</button>
+          </form>
+        </section>
+
+        <section class="panel" id="accountUser" hidden>
+          <p class="account-email-line">当前账号：<strong id="accountEmailLabel"></strong></p>
+          <div class="btn-row">
+            <button type="button" class="btn btn--ghost" id="accountSyncNow">立即同步</button>
+            <button type="button" class="btn btn--ghost" id="accountSignOut">退出登录</button>
+          </div>
+        </section>
+      </section>
     </main>
 
     <nav class="dock" aria-label="底部导航">
@@ -250,6 +301,13 @@
           <path d="M5 7h14M5 12h10M5 17h14" />
         </svg>
         <span>词库</span>
+      </button>
+      <button type="button" class="dock__item" data-view="account">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 20a8 8 0 0 1 16 0" />
+        </svg>
+        <span>我的</span>
       </button>
     </nav>
 
@@ -300,7 +358,12 @@
     <script src="./chengyu-clusters-map.js?v=20261124-1"></script>
     <script src="./dictionary.js?v=20261124-1"></script>
     <script src="./similar-matcher.js?v=20261124-1"></script>
-    <script src="./storage.js?v=20261124-1"></script>
-    <script src="./app.js?v=20261124-3"></script>
+    <script src="./cloud-config.js?v=20261124-4"></script>
+    <script src="./chengyu-sync.js?v=20261124-4"></script>
+    <script src="./storage.js?v=20261124-4"></script>
+    <script src="./update-check.js?v=20261124-4"></script>
+    <script src="./update.js?v=20261124-4"></script>
+    <script src="./account.js?v=20261124-4"></script>
+    <script src="./app.js?v=20261124-4"></script>
   </body>
 </html>

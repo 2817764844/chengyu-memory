@@ -66,10 +66,14 @@
       btn.classList.toggle("is-active", btn.getAttribute("data-view") === view);
     });
     window.scrollTo({ top: 0, behavior: "auto" });
+    document.dispatchEvent(new CustomEvent("chengyu:view", { detail: view }));
     if (view === "gallery") renderGallery();
     if (view === "manage") renderManageList();
     if (view === "groups") renderUserGroups();
     if (view === "bank") renderBank();
+    if (view === "account" && window.ChengyuAccount) {
+      window.ChengyuAccount.renderAccount();
+    }
   }
 
   function updateCounts() {
@@ -631,6 +635,12 @@
   function boot() {
     cacheElements();
     bindEvents();
+    document.addEventListener("chengyu:data-changed", () => {
+      renderGallery();
+      renderManageList();
+      renderUserGroups();
+      updateCounts();
+    });
     createDefaultGroupRows();
     updateCounts();
     renderGallery();

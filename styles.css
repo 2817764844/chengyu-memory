@@ -777,7 +777,7 @@ svg {
 
   .dock {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     position: fixed;
     left: 0;
     right: 0;
@@ -816,4 +816,211 @@ svg {
   .tile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .dock__item {
+    font-size: 10px;
+  }
+}
+
+html.native-safe-area {
+  --safe-top: 0;
+  --safe-right: 0;
+  --safe-bottom: 0;
+  --safe-left: 0;
+}
+
+/* Account + in-app update */
+.account-sync {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.account-sync.is-ok {
+  color: #275b45;
+  background: #e7f6ee;
+}
+
+.account-sync.is-warn,
+.account-sync.is-idle {
+  color: #6a4b16;
+  background: #f8edcb;
+}
+
+.account-sync.is-busy {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.account-update {
+  margin-bottom: 14px;
+}
+
+.account-update-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-update-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.account-version {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.account-update-hint,
+.account-update-result {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.account-update-result.is-latest {
+  color: #275b45;
+}
+
+.account-update-result.is-failed {
+  color: #8c4518;
+}
+
+.account-update-result.is-available,
+.account-update-result.is-checking {
+  color: var(--accent-strong);
+}
+
+.account-update-result.is-web {
+  color: #6a4b16;
+}
+
+.account-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+
+.account-tabs button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.account-tabs button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--accent-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-email-line {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.update-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: max(16px, var(--safe-top)) max(16px, var(--safe-right))
+    max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
+}
+
+.update-modal[hidden] {
+  display: none;
+}
+
+.update-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 28, 48, 0.48);
+}
+
+.update-card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  padding: 18px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+}
+
+.update-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.update-card h2 {
+  margin: 4px 0 8px;
+  font-size: 20px;
+}
+
+.update-copy,
+.update-status {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.update-progress {
+  margin-top: 10px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+.update-progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.update-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.update-later,
+.update-go {
+  flex: 1;
+  min-height: 40px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.update-later {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.update-go {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
 }
